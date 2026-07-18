@@ -387,8 +387,8 @@ body {
   display: flex;
   align-items: flex-end;
   gap: 10px;
-  max-width: 860px;
-  margin: 0 auto;
+  /* xóa max-width: 860px; */
+  /* xóa margin: 0 auto; */
   background: var(--surface2);
   border: 1px solid var(--border);
   border-radius: 16px;
@@ -480,3 +480,98 @@ body {
 
 .sidebar-item:hover .sidebar-delete-btn { opacity: 1; }
 .sidebar-delete-btn:hover { color: #f87171; }
+
+/* ── File upload ── */
+.chat-input-wrapper-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 860px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.file-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+  color: var(--text-dim);
+  width: fit-content;
+}
+
+.file-chip button {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0 2px;
+  line-height: 1;
+}
+
+.file-chip button:hover { color: #f87171; }
+
+.upload-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.upload-btn:hover:not(:disabled) {
+  background: var(--surface2);
+  color: var(--text);
+}
+
+.upload-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* File card hiện trong bubble user */
+.file-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  width: fit-content;
+  max-width: 260px;
+  margin-bottom: 6px;
+}
+
+.file-card-icon { font-size: 28px; flex-shrink: 0; }
+
+.file-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.file-card-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-card-size {
+  font-size: 11px;
+  color: var(--text-muted);
+}

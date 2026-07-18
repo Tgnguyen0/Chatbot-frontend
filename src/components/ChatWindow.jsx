@@ -35,6 +35,19 @@ export default function ChatWindow({ messages, isTyping, suggestions, onSuggesti
             <div className="avatar">✦</div>
           )}
           <div className="bubble-group">
+            {/* Thêm phần này — hiện card file nếu có đính kèm */}
+            {msg.attachments?.map((f, i) => (
+              <div key={i} className="file-card">
+                <div className="file-card-icon">📄</div>
+                <div className="file-card-info">
+                  <span className="file-card-name">{f.name}</span>
+                  <span className="file-card-size">
+                    {(f.size / 1024).toFixed(1)} KB · {f.fileType ?? 'TXT'}
+                  </span>
+                </div>
+              </div>
+            ))}
+
             <div className={`bubble ${msg.role}`}>
               {msg.role === 'bot' ? (
                 <div className="markdown-body">

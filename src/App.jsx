@@ -25,7 +25,7 @@ export default function App() {
 
   // Load danh sách LLM provider từ backend khi mở app
   useEffect(() => {
-    fetch('http://localhost:5112/api/llm-providers')
+    fetch('http://localhost:5112/api/conversations/providers')
       .then(r => r.json())
       .then(data => {
         setProviders(data.providers)
@@ -94,8 +94,8 @@ export default function App() {
   // fileContent: nội dung file đọc được (gửi ngầm cho AI)
   // fileName: tên file (hiện lên UI dạng card)
   // fileSize: dung lượng file (hiện trong card)
-  const handleSend = async (text, fileContent = null, fileName = null, fileSize = null) => {
-    const attachments = fileName ? [{ name: fileName, size: fileSize }] : []
+  const handleSend = async (text, fileContent = null, fileName = null, fileSize = null, fileType = null) => {
+    const attachments = fileName ? [{ name: fileName, size: fileSize, fileType }] : []
 
     // Bubble user chỉ hiện câu hỏi + card file, không lộ nội dung file
     setMessages(prev => [...prev, {
