@@ -3,8 +3,10 @@ import ChatWindow from './components/ChatWindow'
 import ChatInput from './components/ChatInput'
 import { useSignalR } from './hooks/useSignalR'
 
+// Base URL cho tất cả API calls
 const API = 'http://localhost:5112/api/conversations'
 
+// Gợi ý câu hỏi hiện ở empty state
 const SUGGESTIONS = [
   'Giải thích async/await',
   'Viết unit test cho Java',
@@ -13,15 +15,15 @@ const SUGGESTIONS = [
 ]
 
 export default function App() {
-  const [conversations, setConversations] = useState([])
-  const [activeId, setActiveId] = useState(null)
-  const [messages, setMessages] = useState([])
-  const [isTyping, setIsTyping] = useState(false)
+  const [conversations, setConversations] = useState([])  // danh sách sidebar
+  const [activeId, setActiveId] = useState(null)          // conversation đang mở
+  const [messages, setMessages] = useState([])            // tin nhắn trong conversation hiện tại
+  const [isTyping, setIsTyping] = useState(false)         // bot đang trả lời
 
-  const [provider, setProvider] = useState('Gemini')
-  const [providers, setProviders] = useState(['Gemini'])
+  const [provider, setProvider] = useState('Gemini')      // LLM đang chọn
+  const [providers, setProviders] = useState(['Gemini'])  // danh sách LLM có sẵn
 
-  // Load danh sách providers khi mở app
+  // Load danh sách LLM provider từ backend khi mở
   useEffect(() => {
     fetch('http://localhost:5112/api/conversations/providers')
       .then(r => r.json())
@@ -31,7 +33,7 @@ export default function App() {
       })
   }, [])
 
-  // Load danh sách conversations khi mở app
+  // Load danh sách conversations khi mở app (hiện lên sidebar)
   useEffect(() => {
     fetch(API)
       .then(r => r.json())
@@ -39,7 +41,7 @@ export default function App() {
       .catch(console.error)
   }, [])
 
-  // Load lịch sử khi chọn conversation
+  // Click vào conversation trong sidebar → load lịch sử tin nhắn
   const selectConversation = async (id) => {
     setActiveId(id)
     setMessages([])
@@ -56,7 +58,7 @@ export default function App() {
     }
   }
 
-  // Tạo conversation mới
+  // Tạo conversation mới → thêm vào đầu sidebar, clear messages
   const newConversation = async () => {
     const res = await fetch(API, { method: 'POST' })
     const conv = await res.json()
@@ -65,14 +67,15 @@ export default function App() {
     setMessages([])
   }
 
-  // Xoá conversation
+  // Xoá conversation → xoá khỏi sidebar, clear nếu đang active
   const deleteConversation = async (id, e) => {
-    e.stopPropagation()
+    e.stopPropagation() // tránh trigger selectConversation
     await fetch(`${API}/${id}`, { method: 'DELETE' })
     setConversations(prev => prev.filter(c => c.id !== id))
     if (activeId === id) { setActiveId(null); setMessages([]) }
   }
 
+  // Callback nhận tin nhắn từ bot qua SignalR
   const onReceiveMessage = useCallback((role, text) => {
     setIsTyping(false)
     setMessages(prev => [...prev, {
@@ -80,26 +83,45 @@ export default function App() {
       role: 'bot',
       text: role === 'error' ? '⚠️ ' + text : text
     }])
-    // Refresh sidebar để cập nhật title + thứ tự
+    // Refresh sidebar để cập nhật title + thứ tự mới nhất
     fetch(API).then(r => r.json()).then(setConversations)
   }, [])
 
   const { sendMessage, status } = useSignalR(onReceiveMessage)
 
-  const handleSend = async (text) => {
+  // Gửi tin nhắn — hỗ trợ cả text thuần và kèm file
+  // text: câu hỏi của user
+  // fileContent: nội dung file đọc được (gửi ngầm cho AI)
+  // fileName: tên file (hiện lên UI dạng card)
+  // fileSize: dung lượng file (hiện trong card)
+  const handleSend = async (text, fileContent = null, fileName = null, fileSize = null, fileType = null) => {
+    const attachments = fileName ? [{ name: fileName, size: fileSize, fileType }] : []
+
+    // Bubble user chỉ hiện câu hỏi + card file, không lộ nội dung file
+    setMessages(prev => [...prev, {
+      id: Date.now(),
+      role: 'user',
+      text: text || '',
+      attachments
+    }])
+    setIsTyping(true)
+
+    // Nội dung thật gửi cho AI = nội dung file + câu hỏi
+    const actualText = fileContent
+      ? `Nội dung file "${fileName}":\n\n${fileContent}\n\n${text}`
+      : text
+
+    // Nếu chưa có conversation → tự tạo mới rồi gửi luôn
     if (!activeId) {
       const res = await fetch(API, { method: 'POST' })
       const conv = await res.json()
       setConversations(prev => [conv, ...prev])
       setActiveId(conv.id)
-      setMessages([{ id: Date.now(), role: 'user', text }])
-      setIsTyping(true)
-      await sendMessage(conv.id, text, provider)  // ← thêm provider
+      await sendMessage(conv.id, actualText, provider)
       return
     }
-    setMessages(prev => [...prev, { id: Date.now(), role: 'user', text }])
-    setIsTyping(true)
-    await sendMessage(activeId, text, provider)   // ← thêm provider
+
+    await sendMessage(activeId, actualText, provider)
   }
 
   const statusLabel = {
@@ -111,6 +133,7 @@ export default function App() {
 
   return (
     <div className="app">
+      {/* Sidebar trái — logo, nút tạo mới, danh sách conversation */}
       <aside className="sidebar">
         <div className="sidebar-logo">
           <span className="logo-icon">✦</span>
@@ -141,8 +164,10 @@ export default function App() {
         ))}
       </aside>
 
+      {/* Main area — header, cửa sổ chat, ô nhập */}
       <div className="main">
         <header className="header">
+          {/* Dropdown chọn LLM provider */}
           <select
             className="provider-select"
             value={provider}
@@ -155,6 +180,7 @@ export default function App() {
           <span className="status">{statusLabel[status]}</span>
         </header>
 
+        {/* Cửa sổ hiển thị tin nhắn */}
         <ChatWindow
           messages={messages}
           isTyping={isTyping}
@@ -162,6 +188,7 @@ export default function App() {
           onSuggestion={handleSend}
         />
 
+        {/* Ô nhập tin nhắn + upload file */}
         <div className="chat-input-wrapper">
           <ChatInput
             onSend={handleSend}
