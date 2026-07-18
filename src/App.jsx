@@ -23,7 +23,7 @@ export default function App() {
   const [provider, setProvider] = useState('Gemini')      // LLM đang chọn
   const [providers, setProviders] = useState(['Gemini'])  // danh sách LLM có sẵn
 
-  // Load danh sách LLM provider từ backend khi mở app
+  // Load danh sách LLM provider từ backend khi mở
   useEffect(() => {
     fetch('http://localhost:5112/api/conversations/providers')
       .then(r => r.json())
